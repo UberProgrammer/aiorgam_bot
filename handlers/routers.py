@@ -79,7 +79,6 @@ async def check_bad_words(message: Message):
     if text_lower in badWords:
         await message.delete()
         return
-        return
 
     # Проверка 2: есть ли запрещенное слово внутри сообщения
     for word in words:
