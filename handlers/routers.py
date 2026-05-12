@@ -85,4 +85,3 @@ async def check_bad_words(message: Message):
         if word in badWords:
             await message.delete()
             return
-
