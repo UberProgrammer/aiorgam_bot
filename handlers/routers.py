@@ -54,8 +54,11 @@ async def set_list(message: Message, state: FSMContext):
                          "\nФормат ввода: слово1 слово2 слово3 слово4")
 
     await state.set_state(RegisterStates.waiting_for_words)
-
-
+"""
+@router.message(Command("add_word"))
+async def add_word(message: Message, state: FSMContext):
+    badWords
+"""
 @router.message(Command("show_list"))
 async def show_list(message: Message):
     chatId = message.chat.id
@@ -104,4 +107,7 @@ async def check_bad_words(message: Message):
     for word in words:
         if word in badWords:
             await message.delete()
+            username = message.from_user.username
+            await message.answer(f"сообщение пользователя <i>@{username}</i> было удалено (запрещенное слово)",
+                                 parse_mode="HTML")
             return
