@@ -21,8 +21,8 @@ class RegisterStates(StatesGroup):
 
 router = Router()
 
-badWords = ["delete", "казик", "нарко", "мет", "тяжкие", "jessy", "obama", "pussy", "ikit", "dick", "хуй", "пизда", "шлюха"]
-bad_chars = "!@#$%^&*{}[]:;<>,.?"
+badWords = []
+badChars = "!@#$%^&*{}[]:;<>,.?"
 
 @router.message(Command("start"))
 async def start(message: Message):
@@ -46,19 +46,22 @@ async def my_handler(message: Message):
     await message.answer(f"firstname: <i>{name}</i>"
                          f"\nuserid: <i>{user_id}</i>"
                          f"\nusername: <i>{username}</i>", parse_mode="HTML")
-"""
+
 @router.message(Command("set_list"))
-async def set_list(message: Message):
+async def set_list(message: Message, state: FSMContext):
     await message.answer("Введите список запрещенных слов через пробел: "
                          "\nФормат ввода: слово1 слово2 слово3 слово4")
 
     await state.set_state(RegisterStates.waiting_for_words)
 
 @router.message(RegisterStates.waiting_for_words)
-async def process(message:пше  Message, state: FSMContext):
-    badWords = message.text.split()
+async def process(message: Message, state: FSMContext):
+    badWords = message.text.lower().split()
+    # Очищаем состяоние
     await state.clear()
-"""
+    # Сообщаем пользователю о сохраненни
+    await message.answer("Список сохранен")
+
 @router.message()
 async def check_bad_words(message: Message):
     # Пропускаем команды (они уже обработаны выше)
@@ -72,7 +75,7 @@ async def check_bad_words(message: Message):
     if not message.text:
         return
     # Удаялем лишние символы
-    for char in bad_chars:
+    for char in badChars:
         text = message.text.replace(char, "")
         # Приводим к нижнему регистру для сравнения
         text_lower = text.lower()
