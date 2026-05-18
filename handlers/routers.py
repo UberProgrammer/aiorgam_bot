@@ -30,8 +30,8 @@ async def start(message: Message):
                          parse_mode="HTML")
 @router.message(Command("help"))
 async def help(message: Message):
-    await message.answer("Команды:\n<b>/start</b> - заупстить бот\n<b>/help</b> для помощи\n<b>/about</b> для информации"
-                        "\n<b>/my_handler<b> инофрмация о юзере",
+    await message.answer("Команды:\n<b>/start</b> - заупстить бот\n<b>/help</b> для помощи\n<b>/about</b> для информации" +
+                         "\n<b>/my_handler<b> инофрмация о юзере",
                          parse_mode="HTML",
                          reply_markup=get_main_reply_keyboard())
 @router.message(Command("about"))
