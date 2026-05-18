@@ -22,7 +22,7 @@ class RegisterStates(StatesGroup):
 router = Router()
 
 badWords = ["delete", "казик", "нарко", "мет", "тяжкие", "jessy", "obama", "pussy", "ikit", "dick", "хуй", "пизда", "шлюха"]
-
+bad_chars = "!@#$%^&*{}[]:;<>,.?"
 
 @router.message(Command("start"))
 async def start(message: Message):
@@ -30,7 +30,8 @@ async def start(message: Message):
                          parse_mode="HTML")
 @router.message(Command("help"))
 async def help(message: Message):
-    await message.answer("Команды:\n<b>/start</b> - заупстить бот\n<b>/help</b> для помощи\n<b>/about</b> для информации",
+    await message.answer("Команды:\n<b>/start</b> - заупстить бот\n<b>/help</b> для помощи\n<b>/about</b> для информации"
+                        "\n<b>/my_handler<b> инофрмация о юзере",
                          parse_mode="HTML",
                          reply_markup=get_main_reply_keyboard())
 @router.message(Command("about"))
@@ -63,17 +64,20 @@ async def check_bad_words(message: Message):
     # Пропускаем команды (они уже обработаны выше)
     if message.text and message.text.startswith('/'):
         return
-    ### Прикол
+    ### Прикол                                                  ДОДЕЛАТЬ
     if message.sticker or message.animation or message.photo:
         await message.delete()
 
     # Проверяем наличие текста
     if not message.text:
         return
-
-    # Приводим к нижнему регистру для сравнения
-    text_lower = message.text.lower()
-    words = text_lower.split()
+    # Удаялем лишние символы
+    for char in bad_chars:
+        text = message.text.replace(char, "")
+        # Приводим к нижнему регистру для сравнения
+        text_lower = text.lower()
+        # Режем строку от пользователля на отдельные слова
+        words = text_lower.split()
 
     # Проверка 1: совпадает ли все сообщение с запрещенным словом
     if text_lower in badWords:
