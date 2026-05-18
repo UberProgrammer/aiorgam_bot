@@ -22,6 +22,7 @@ class RegisterStates(StatesGroup):
 router = Router()
 
 badWords = []
+badWordsByChat = {}
 badChars = "!@#$%^&*{}[]:;<>,.?"
 
 @router.message(Command("start"))
@@ -31,7 +32,8 @@ async def start(message: Message):
 @router.message(Command("help"))
 async def help(message: Message):
     await message.answer("Команды:\n<b>/start</b> - запустить бот\n<b>/help</b> для помощи\n<b>/about</b> для информации"
-                         "\n<b>/my_handler</b> информация о юзере",
+                         "\n<b>/my_handler</b> информация о юзере\n<b>/set_list<b/> задать список запрешенных слов"
+                         "\n<b>/show_list</b> посмотреть список спрещенных слов",
                          parse_mode="HTML",
                          reply_markup=get_main_reply_keyboard())
 @router.message(Command("about"))
@@ -46,7 +48,6 @@ async def my_handler(message: Message):
     await message.answer(f"firstname: <i>{name}</i>"
                          f"\nuserid: <i>{user_id}</i>"
                          f"\nusername: <i>{username}</i>", parse_mode="HTML")
-
 @router.message(Command("set_list"))
 async def set_list(message: Message, state: FSMContext):
     await message.answer("Введите список запрещенных слов через пробел: "
@@ -54,40 +55,52 @@ async def set_list(message: Message, state: FSMContext):
 
     await state.set_state(RegisterStates.waiting_for_words)
 
+
+@router.message(Command("show_list"))
+async def show_list(message: Message):
+    chatId = message.chat.id
+    badWords = badWordsByChat.get(chatId, [])
+
+    if not badWords:
+        await message.answer("Список запрещённых слов для этого чата пуст")
+    else:
+        await message.answer(f"Список слов ({len(badWords)}): {', '.join(badWords)}")
+
 @router.message(RegisterStates.waiting_for_words)
 async def process(message: Message, state: FSMContext):
-    badWords = message.text.lower().split()
+    chatId = message.chat.id
+    badWordsByChat[chatId] = message.text.lower().split()
     # Очищаем состяоние
     await state.clear()
     # Сообщаем пользователю о сохраненни
     await message.answer("Список сохранен")
 
+
 @router.message()
 async def check_bad_words(message: Message):
-    # Пропускаем команды (они уже обработаны выше)
     if message.text and message.text.startswith('/'):
         return
-    ### Прикол                                                  ДОДЕЛАТЬ
+
     if message.sticker or message.animation or message.photo:
         await message.delete()
+        return
 
-    # Проверяем наличие текста
     if not message.text:
         return
-    # Удаялем лишние символы
-    for char in badChars:
-        text = message.text.replace(char, "")
-        # Приводим к нижнему регистру для сравнения
-        text_lower = text.lower()
-        # Режем строку от пользователля на отдельные слова
-        words = text_lower.split()
 
-    # Проверка 1: совпадает ли все сообщение с запрещенным словом
-    if text_lower in badWords:
-        await message.delete()
+    clean_text = message.text
+    for char in badChars:
+        clean_text = clean_text.replace(char, "")
+
+    text_lower = clean_text.lower()
+    words = text_lower.split()
+
+    chatId = message.chat.id
+    badWords = badWordsByChat.get(chatId, [])
+
+    if not badWords:
         return
 
-    # Проверка 2: есть ли запрещенное слово внутри сообщения
     for word in words:
         if word in badWords:
             await message.delete()
