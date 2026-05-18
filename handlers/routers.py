@@ -32,7 +32,7 @@ async def start(message: Message):
 @router.message(Command("help"))
 async def help(message: Message):
     await message.answer("Команды:\n<b>/start</b> - запустить бот\n<b>/help</b> для помощи\n<b>/about</b> для информации"
-                         "\n<b>/my_handler</b> информация о юзере\n<b>/set_list<b/> задать список запрешенных слов"
+                         "\n<b>/my_handler</b> информация о юзере\n<b>/set_list</b> задать список запрешенных слов"
                          "\n<b>/show_list</b> посмотреть список спрещенных слов",
                          parse_mode="HTML",
                          reply_markup=get_main_reply_keyboard())
