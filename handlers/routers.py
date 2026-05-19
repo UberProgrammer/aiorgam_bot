@@ -6,18 +6,20 @@
 @dateOfBeginning: 27.02.2026
 @dateOfRelease: 30.05.2026
 '''
-from os import wait
+from multiprocessing import process
 
 from aiogram import Router
 from aiogram.filters import Command
-from aiogram.types import Message
-from keyboard import get_main_reply_keyboard
+from aiogram.types import Message, ChatMemberAdministrator, ChatMemberOwner
+#from keyboard import get_main_reply_keyboard
 from aiogram.fsm.state import State, StatesGroup  # Для работы с состоянием
 from aiogram.fsm.context import FSMContext        # Для работы с состоянием
 
 ### Класс состояний (для функции /set_list )
 class RegisterStates(StatesGroup):
     waiting_for_words = State()
+    waiting_for_new_words = State()
+
 
 router = Router()
 
@@ -33,9 +35,9 @@ async def start(message: Message):
 async def help(message: Message):
     await message.answer("Команды:\n<b>/start</b> - запустить бот\n<b>/help</b> для помощи\n<b>/about</b> для информации"
                          "\n<b>/my_handler</b> информация о юзере\n<b>/set_list</b> задать список запрешенных слов"
-                         "\n<b>/show_list</b> посмотреть список спрещенных слов",
-                         parse_mode="HTML",
-                         reply_markup=get_main_reply_keyboard())
+                         "\n<b>/show_list</b> посмотреть список спрещенных слов"
+                         "\n<b>/add_words</b> для добавления слов в уже существующий список",
+                         parse_mode="HTML")
 @router.message(Command("about"))
 async def about(message: Message):
     await message.answer(f"Это команда про бота.\nБот разрабатывется командой БИТТ."
@@ -50,15 +52,49 @@ async def my_handler(message: Message):
                          f"\nusername: <i>{username}</i>", parse_mode="HTML")
 @router.message(Command("set_list"))
 async def set_list(message: Message, state: FSMContext):
+    chat_member = await message.bot.get_chat_member(message.chat.id, message.from_user.id)
+
+    if chat_member.status not in [ChatMemberAdministrator, ChatMemberOwner]:
+        await message.answer("Вы не имеете достаточно прав")
+        return
+
+
     await message.answer("Введите список запрещенных слов через пробел: "
                          "\nФормат ввода: слово1 слово2 слово3 слово4")
 
     await state.set_state(RegisterStates.waiting_for_words)
-"""
-@router.message(Command("add_word"))
-async def add_word(message: Message, state: FSMContext):
-    badWords
-"""
+
+@router.message(RegisterStates.waiting_for_words)
+async def process(message: Message, state: FSMContext):
+    chatId = message.chat.id
+    badWordsByChat[chatId] = message.text.lower().split()
+    # Очищаем состяоние
+    await state.clear()
+    # Сообщаем пользователю о сохраненни
+    await message.answer("Список сохранен")
+
+@router.message(Command("add_words"))
+async def add_words(message: Message, state: FSMContext):
+    chatId = message.chat.id
+    badWords = badWordsByChat.get(chatId, [])
+    await message.answer("Введите слова, которые вы хотите добавить к уже существующему списку" +
+                   "\nФормат ввода: слово1 слово2 слово3 слово4")
+    await state.set_state(RegisterStates.waiting_for_new_words)
+
+@router.message(RegisterStates.waiting_for_new_words)
+async def process(message: Message, state: FSMContext):
+    chatId = message.chat.id
+    if chatId not in badWordsByChat:
+        await message.answer("Список запрещенных слов пуст." +
+        "\nСначала используйте <b>/set_list</b>", parse_mode = "HTML")
+        await state.clear()
+        return
+    userWords = message.text.lower().split()
+    for word in userWords:
+        badWordsByChat[chatId].append(word)
+    await state.clear()
+    await message.answer("Слова успешно сохранены")
+
 @router.message(Command("show_list"))
 async def show_list(message: Message):
     chatId = message.chat.id
@@ -69,14 +105,6 @@ async def show_list(message: Message):
     else:
         await message.answer(f"Список слов ({len(badWords)}): {', '.join(badWords)}")
 
-@router.message(RegisterStates.waiting_for_words)
-async def process(message: Message, state: FSMContext):
-    chatId = message.chat.id
-    badWordsByChat[chatId] = message.text.lower().split()
-    # Очищаем состяоние
-    await state.clear()
-    # Сообщаем пользователю о сохраненни
-    await message.answer("Список сохранен")
 
 
 @router.message()
