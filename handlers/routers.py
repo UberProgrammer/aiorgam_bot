@@ -11,7 +11,6 @@ from multiprocessing import process
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message, ChatMemberAdministrator, ChatMemberOwner
-#from keyboard import get_main_reply_keyboard
 from aiogram.fsm.state import State, StatesGroup  # Для работы с состоянием
 from aiogram.fsm.context import FSMContext        # Для работы с состоянием
 
@@ -52,9 +51,11 @@ async def my_handler(message: Message):
                          f"\nusername: <i>{username}</i>", parse_mode="HTML")
 @router.message(Command("set_list"))
 async def set_list(message: Message, state: FSMContext):
+
+
     chat_member = await message.bot.get_chat_member(message.chat.id, message.from_user.id)
 
-    if chat_member.status not in [ChatMemberAdministrator, ChatMemberOwner]:
+    if chat_member.status not in ["administrator", "creator", "owner"]:
         await message.answer("Вы не имеете достаточно прав")
         return
 
@@ -75,8 +76,11 @@ async def process(message: Message, state: FSMContext):
 
 @router.message(Command("add_words"))
 async def add_words(message: Message, state: FSMContext):
-    chatId = message.chat.id
-    badWords = badWordsByChat.get(chatId, [])
+    chat_member = await message.bot.get_chat_member(message.chat.id, message.from_user.id)
+
+    if chat_member.status not in ["administrator", "creator", "owner"]:
+        await message.answer("Вы не имеете достаточно прав")
+        return
     await message.answer("Введите слова, которые вы хотите добавить к уже существующему списку" +
                    "\nФормат ввода: слово1 слово2 слово3 слово4")
     await state.set_state(RegisterStates.waiting_for_new_words)
@@ -97,6 +101,11 @@ async def process(message: Message, state: FSMContext):
 
 @router.message(Command("show_list"))
 async def show_list(message: Message):
+    chat_member = await message.bot.get_chat_member(message.chat.id, message.from_user.id)
+
+    if chat_member.status not in ["administrator", "creator", "owner"]:
+        await message.answer("Вы не имеете достаточно прав")
+        return
     chatId = message.chat.id
     badWords = badWordsByChat.get(chatId, [])
 
